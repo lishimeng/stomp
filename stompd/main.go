@@ -18,7 +18,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/go-stomp/stomp/server"
+	"github.com/lishimeng/stomp/server"
 )
 
 // TODO: experimenting with ways to gracefully shutdown the server,

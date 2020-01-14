@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-stomp/stomp/frame"
-	"github.com/go-stomp/stomp/server/client"
-	"github.com/go-stomp/stomp/server/queue"
-	"github.com/go-stomp/stomp/server/topic"
+	"github.com/lishimeng/stomp/frame"
+	"github.com/lishimeng/stomp/server/client"
+	"github.com/lishimeng/stomp/server/queue"
+	"github.com/lishimeng/stomp/server/topic"
 )
 
 type requestProcessor struct {
