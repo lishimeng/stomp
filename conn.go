@@ -238,12 +238,12 @@ func processLoop(c *Conn, writer *frame.Writer) {
 
 	defer c.MustDisconnect()
 
-	var stopTimers = func() {
-		if readTimer != nil {
+	var stopTimers = func(read, write bool) {
+		if readTimer != nil && read {
 			readTimer.Stop()
 			readTimer = nil
 		}
-		if writeTimer != nil {
+		if writeTimer != nil && write {
 			writeTimer.Stop()
 			writeTimer = nil
 		}
@@ -267,6 +267,10 @@ func processLoop(c *Conn, writer *frame.Writer) {
 		writeTimeoutDuration = time.Hour
 	}
 
+	if writeTimeoutDuration > 0 && readTimeoutDuration <= writeTimeoutDuration+time.Second*3 {
+		readTimeoutDuration += time.Second*3
+	}
+
 	for {
 		if readTimer == nil {
 			readTimer = time.NewTimer(readTimeoutDuration)
@@ -277,7 +281,7 @@ func processLoop(c *Conn, writer *frame.Writer) {
 
 		select {
 		case <-readTimer.C:
-			stopTimers()
+			stopTimers(true, true)
 			if readTimeoutEnable {
 				// read timeout, close the connection
 				err := newErrorMessage("read timeout")
@@ -286,7 +290,7 @@ func processLoop(c *Conn, writer *frame.Writer) {
 			}
 
 		case <-writeTimer.C:
-			stopTimers()
+			stopTimers(false, true)
 			if writeTimeoutEnable {
 				// write timeout, send a heart-beat frame
 				err := writer.Write(nil)
@@ -297,7 +301,7 @@ func processLoop(c *Conn, writer *frame.Writer) {
 			}
 
 		case f, ok := <-c.readCh:
-			stopTimers()
+			stopTimers(true, false)
 
 			if !ok {
 				err := newErrorMessage("connection closed")
@@ -350,7 +354,7 @@ func processLoop(c *Conn, writer *frame.Writer) {
 
 		case req, ok := <-c.writeCh:
 			// stop the write timeout
-			stopTimers()
+			stopTimers(false, true)
 			if !ok {
 				sendError(channels, errors.New("write channel closed"))
 				return
